@@ -30,15 +30,31 @@
   - `make output`: Saves Terraform outputs to `infra/terraform_outputs.json`.
   - `make inventory`: Generates an Ansible inventory file (`infra/inventory.ini`) using Terraform outputs and `environments/poc.yaml`.
 
-### 3. GitLab Configuration (Manual Ansible)
-- **Ansible Playbooks**: Manually create Ansible playbooks under `/ansible` (e.g., `site.yml`, roles for GitLab setup).
-  - **`site.yml`**: Main playbook to install and configure GitLab CE on the provisioned EC2 instance.
-    - Tasks to include: Install dependencies (curl, openssh-server, etc.), add GitLab package repository, install GitLab CE, configure `/etc/gitlab/gitlab.rb` (using `gitlab_external_url`, S3 bucket details, etc., from inventory), run `gitlab-ctl reconfigure`.
-    - Consider tags: `gitlab`, `letsencrypt` (if basic Let's Encrypt setup is included).
-- **Running Ansible**:
-  - `make configure`: Runs `ansible-playbook -i infra/inventory.ini ansible/site.yml`.
-    - The inventory file provides the instance IP, SSH user, private key path, and other variables from `poc.yaml` and Terraform outputs.
-  - **Idempotence**: Ensure Ansible playbooks are idempotent.
+### 3. Deployment Automation
+- **Makefile**: Added a Makefile to simplify deployment, verification, and cleanup.
+  - `make deploy`: Runs Terraform and Ansible to deploy and configure GitLab.
+  - `make verify`: Performs smoke tests (HTTP 200, SSH clone, dry-run backup).
+  - `make destroy`: Cleans up all resources.
+
+### 4. Documentation Updates
+- **README.md**: Updated with deployment steps, architecture diagram, and cost table.
+- **Troubleshooting Log**: Added a section to document errors and fixes encountered during deployment.
+
+### 5. Verification
+- **Tests**:
+  - HTTP 200 response from GitLab URL.
+  - SSH clone functionality.
+  - Dry-run backup on the GitLab instance.
+
+### 6. Error Handling
+- **Logging**:
+  - Captured stdout/stderr for failed commands.
+  - Documented fixes in the troubleshooting log.
+
+### 7. Branching and Commits
+- **Branch**: `poc/initial-implementation`.
+- **Commits**: Used Conventional Commits for all changes.
+- **Pull Request**: Summarized deployment success, Free-Tier bill of materials, and follow-up improvements.
 
 ### 4. Validation & Testing
 - **`make verify` target**: Performs basic smoke tests.
