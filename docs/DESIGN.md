@@ -24,19 +24,14 @@ graph TD
 - IAM roles with least privilege.
 - KMS for encryption of EBS and S3.
 
-## Future Scale-Out Path
-- Move PostgreSQL to RDS.
-- Add ElastiCache for Redis.
-- Use an Auto Scaling Group for GitLab Runners.
-
 ## Cost Table
-| Resource         | On-Demand ($/mo) | 3-Year CSP ($/mo) |
-|------------------|------------------|-------------------|
-| t4g.small EC2    | 15               | 10                |
-| gp3 EBS (100GB)  | 10               | 7                 |
-| S3 (100GB)       | 2                | 2                 |
-| AWS Backup       | 5                | 5                 |
-| **Total**        | **32**           | **24**            |
+| Resource                           | Qty / Size         | On‑Demand ($/mo) | 3‑yr Compute Savings Plan ($/mo)* |
+|------------------------------------|--------------------|------------------|----------------------------------|
+| t4g.small EC2                      | 1 instance         | 12.26            | 8.83                             |
+| gp3 EBS                            | 20 GiB             | 1.60             | 1.60                             |
+| S3 Standard                        | 50 GiB             | 1.15             | 1.15                             |
+| AWS Backup (EBS snapshots)         | 20 GiB retained    | 1.00             | 1.00                             |
+| **Total**                          |                    | **16.01**        | **12.58**                        |
 
 ## Toolchain Decisions
 - **Terraform**: Chosen for its modularity and community support.
