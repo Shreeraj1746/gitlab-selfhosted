@@ -38,14 +38,21 @@ This repository provides a cost-optimized infrastructure-as-code solution for de
    ```
 
 ## Architecture Diagram
+
 ```mermaid
-graph TD
-    A[User] -->|HTTP/HTTPS| B[ALB]
-    B --> C[GitLab EC2 Instance]
-    C --> D[S3 Buckets for Storage]
-    C --> E[EBS Volume for Data]
-    E --> F[AWS Backup (Snapshots)]
+flowchart TD
+   A[User] -- HTTP/HTTPS --> B[ALB]
+   B -- HTTP/HTTPS --> C[GitLab EC2 Instance]
+   C -- Object Storage --> D[S3 Bucket]
+   C -- Data Volume --> E[EBS Volume]
+   E -- Snapshots --> F[AWS Backup]
 ```
+
+**Notes:**
+- Mermaid diagrams render best in Markdown viewers that support Mermaid (e.g., GitHub, VS Code with the Mermaid plugin).
+- Changed `graph TD` to `flowchart TD` for better compatibility.
+- Clarified edge labels and node names for readability.
+- Ensure your Markdown preview tool supports Mermaid syntax.
 
 ## Cost Table
 | Resource         | Free Tier Eligible | Notes                          |
