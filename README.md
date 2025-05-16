@@ -48,12 +48,6 @@ flowchart TD
    E -- Snapshots --> F[AWS Backup]
 ```
 
-**Notes:**
-- Mermaid diagrams render best in Markdown viewers that support Mermaid (e.g., GitHub, VS Code with the Mermaid plugin).
-- Changed `graph TD` to `flowchart TD` for better compatibility.
-- Clarified edge labels and node names for readability.
-- Ensure your Markdown preview tool supports Mermaid syntax.
-
 ## Cost Table
 | Resource         | Free Tier Eligible | Notes                          |
 |------------------|--------------------|--------------------------------|
