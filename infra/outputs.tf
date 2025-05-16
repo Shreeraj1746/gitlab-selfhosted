@@ -28,3 +28,28 @@ output "subnet_id" {
   description = "ID of the public subnet."
   value       = aws_subnet.public_subnet.id
 }
+
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer (if enabled)"
+  value       = length(aws_lb.gitlab_alb) > 0 ? aws_lb.gitlab_alb[0].dns_name : null
+}
+
+output "s3_gitlab_backups_bucket" {
+  description = "S3 bucket name for GitLab backups (if enabled)"
+  value       = length(aws_s3_bucket.gitlab_backups) > 0 ? aws_s3_bucket.gitlab_backups[0].bucket : null
+}
+
+output "s3_gitlab_lfs_bucket" {
+  description = "S3 bucket name for GitLab LFS (if enabled)"
+  value       = length(aws_s3_bucket.gitlab_lfs) > 0 ? aws_s3_bucket.gitlab_lfs[0].bucket : null
+}
+
+output "s3_gitlab_artifacts_bucket" {
+  description = "S3 bucket name for GitLab artifacts (if enabled)"
+  value       = length(aws_s3_bucket.gitlab_artifacts) > 0 ? aws_s3_bucket.gitlab_artifacts[0].bucket : null
+}
+
+output "s3_gitlab_packages_bucket" {
+  description = "S3 bucket name for GitLab packages (if enabled)"
+  value       = length(aws_s3_bucket.gitlab_packages) > 0 ? aws_s3_bucket.gitlab_packages[0].bucket : null
+}

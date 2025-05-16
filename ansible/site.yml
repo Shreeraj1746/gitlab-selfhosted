@@ -4,13 +4,54 @@
   become: true
   vars:
     gitlab_external_url: "http://{{ ansible_host }}"
+  pre_tasks:
+    # Python bootstrapping no longer needed with Amazon Linux 2023
   tasks:
-    - name: Update and upgrade apt packages
+    - name: Update and upgrade packages (Amazon Linux)
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - gitlab
+
+    - name: Install required dependencies (Amazon Linux)
+      yum:
+        name:
+          - openssh-server
+          - ca-certificates
+          - tzdata
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - gitlab
+
+    - name: Add GitLab repository (Amazon Linux)
+      shell: |
+        curl -fsSL https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | bash
+      args:
+        executable: /bin/bash
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - gitlab
+
+    - name: Install GitLab CE (Amazon Linux)
+      yum:
+        name: gitlab-ce
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+      tags:
+        - gitlab
+
+    - name: Update and upgrade apt packages (Debian/Ubuntu)
       apt:
         update_cache: yes
         upgrade: dist
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - gitlab
 
-    - name: Install required dependencies
+    - name: Install required dependencies (Debian/Ubuntu)
       apt:
         name:
           - curl
@@ -18,32 +59,111 @@
           - ca-certificates
           - tzdata
         state: present
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - gitlab
 
-    - name: Add GitLab repository
+    - name: Add GitLab repository (Debian/Ubuntu)
       shell: |
         curl -fsSL https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | bash
       args:
         warn: false
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - gitlab
 
-    - name: Install GitLab CE
+    - name: Install GitLab CE (Debian/Ubuntu)
       apt:
         name: gitlab-ce
         state: present
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - gitlab
 
     - name: Configure GitLab external URL
       lineinfile:
         path: /etc/gitlab/gitlab.rb
         regexp: '^external_url'
         line: "external_url '{{ gitlab_external_url }}'"
+      tags:
+        - gitlab
 
-    - name: Reconfigure GitLab
+    - name: Configure S3 object storage for LFS, artifacts, backups, and packages
+      blockinfile:
+        path: /etc/gitlab/gitlab.rb
+        marker: "# {mark} ANSIBLE MANAGED S3 CONFIG"
+        block: |
+          # S3 object storage configuration (idempotent)
+          gitlab_rails['lfs_enabled'] = {{ 'true' if enable_s3_lfs | default(false) else 'false' }}
+          gitlab_rails['lfs_object_store_enabled'] = {{ 'true' if enable_s3_lfs | default(false) else 'false' }}
+          gitlab_rails['lfs_object_store_remote_directory'] = '{{ s3_gitlab_lfs_bucket | default("") }}'
+          gitlab_rails['lfs_object_store_connection'] = {
+            'provider' => 'AWS',
+            'region' => 'ap-south-1',
+            'aws_access_key_id' => '{{ aws_access_key_id | default("") }}',
+            'aws_secret_access_key' => '{{ aws_secret_access_key | default("") }}'
+          }
+          gitlab_rails['artifacts_object_store_enabled'] = {{ 'true' if enable_s3_artifacts | default(false) else 'false' }}
+          gitlab_rails['artifacts_object_store_remote_directory'] = '{{ s3_gitlab_artifacts_bucket | default("") }}'
+          gitlab_rails['artifacts_object_store_connection'] = {
+            'provider' => 'AWS',
+            'region' => 'ap-south-1',
+            'aws_access_key_id' => '{{ aws_access_key_id | default("") }}',
+            'aws_secret_access_key' => '{{ aws_secret_access_key | default("") }}'
+          }
+          gitlab_rails['backup_upload_connection'] = {
+            'provider' => 'AWS',
+            'region' => 'ap-south-1',
+            'aws_access_key_id' => '{{ aws_access_key_id | default("") }}',
+            'aws_secret_access_key' => '{{ aws_secret_access_key | default("") }}'
+          }
+          gitlab_rails['backup_upload_remote_directory'] = '{{ s3_gitlab_backups_bucket | default("") }}'
+          gitlab_rails['packages_enabled'] = {{ 'true' if enable_s3_packages | default(false) else 'false' }}
+          gitlab_rails['packages_object_store_enabled'] = {{ 'true' if enable_s3_packages | default(false) else 'false' }}
+          gitlab_rails['packages_object_store_remote_directory'] = '{{ s3_gitlab_packages_bucket | default("") }}'
+          gitlab_rails['packages_object_store_connection'] = {
+            'provider' => 'AWS',
+            'region' => 'ap-south-1',
+            'aws_access_key_id' => '{{ aws_access_key_id | default("") }}',
+            'aws_secret_access_key' => '{{ aws_secret_access_key | default("") }}'
+          }
+          # KMS encryption for EBS and S3 (if enabled)
+          # (Assume KMS key is managed by AWS and default for EBS/S3)
+      when: enable_s3_lfs | default(false) or enable_s3_artifacts | default(false) or enable_s3_backups | default(false) or enable_s3_packages | default(false)
+      tags:
+        - gitlab
+        - backup
+
+    - name: Reconfigure GitLab (with timeout)
       command: gitlab-ctl reconfigure
+      args:
+        timeout: 600  # 10 minutes max
+      register: reconfigure_result
+      ignore_errors: true
+      tags:
+        - gitlab
+        - ssl
+        - backup
+
+    - name: Fail if gitlab-ctl reconfigure timed out or failed
+      fail:
+        msg: |
+          gitlab-ctl reconfigure failed or timed out. Last output:\n{{ reconfigure_result.stdout | default('') }}\n{{ reconfigure_result.stderr | default('') }}
+      when: reconfigure_result.rc is defined and reconfigure_result.rc != 0
+      tags:
+        - gitlab
+        - ssl
+        - backup
 
     - name: Ensure GitLab is running
       command: gitlab-ctl status
       register: gitlab_status
+      tags:
+        - gitlab
 
     - name: Fail if GitLab is not running
       fail:
         msg: "GitLab is not running. Check the logs for details."
       when: "gitlab_status.stdout.find('run:') == -1"
+      tags:
+        - gitlab

@@ -1,0 +1,28 @@
+---
+- name: Bootstrap Python 3.8+ on Amazon Linux 2
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure Python 3.8 is installed (Amazon Linux 2)
+      yum:
+        name: python38
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Ensure pip for Python 3.8 is installed (Amazon Linux 2)
+      yum:
+        name: python38-pip
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Set python3 alternative to python3.8 (Amazon Linux 2)
+      command: alternatives --set python3 /usr/bin/python3.8
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Ensure /usr/bin/python3 points to python3.8 (Amazon Linux 2)
+      file:
+        src: /usr/bin/python3.8
+        dest: /usr/bin/python3
+        state: link
+        force: true
+      when: ansible_facts['os_family'] == 'RedHat'

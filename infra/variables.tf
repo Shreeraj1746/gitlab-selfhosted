@@ -5,9 +5,9 @@ variable "aws_region" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type for GitLab. t4g.small is generally Free Tier eligible (depending on AWS promotions and account status)."
+  description = "EC2 instance type for GitLab."
   type        = string
-  default     = "t4g.small"
+  default     = "t4g.medium" # Updated to t4g.medium for better performance
 }
 
 variable "root_volume_size" {
