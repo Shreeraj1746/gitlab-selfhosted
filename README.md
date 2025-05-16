@@ -69,7 +69,7 @@ flowchart TD
 - All errors and fixes encountered during deployment are documented in the Troubleshooting Log section of this repository.
 
 ## Known Issues
-- Ensure the SSH key pair is located at `/Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem` or update the path in Terraform outputs.
+- Ensure the SSH key pair is located at the expected path or update the path in Terraform outputs.
 - S3 and ALB resources may incur costs if enabled.
 
 ## Notes
