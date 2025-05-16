@@ -48,4 +48,4 @@ This repository only contains the skeleton structure for now. Terraform resource
 
 ## Notes
 - All resources are deployed in the `ap-south-1` region.
-- Ensure the SSH key pair is located at `/shreeraj/.ssh/basic-cloud-app-key-pair.pem`.
+- Ensure the SSH key pair is located at `/Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem`.

@@ -15,7 +15,7 @@ output "gitlab_instance_public_dns" {
 
 output "ssh_connection_string" {
   description = "Command to SSH into the GitLab instance. Use the provided key pair."
-  value       = "ssh -i /shreeraj/.ssh/basic-cloud-app-key-pair.pem ec2-user@${aws_instance.gitlab.public_dns}"
+  value       = "ssh -i /Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem ec2-user@${aws_instance.gitlab.public_dns}"
   sensitive   = true
 }
 
