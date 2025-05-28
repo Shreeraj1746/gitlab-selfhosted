@@ -136,8 +136,6 @@
 
     - name: Reconfigure GitLab (with timeout)
       command: gitlab-ctl reconfigure
-      args:
-        timeout: 600  # 10 minutes max
       register: reconfigure_result
       ignore_errors: true
       tags:

@@ -16,13 +16,13 @@ deploy:
 	  sleep 5; \
 	done
 	@echo "Running Ansible playbook to configure GitLab..."
-	ansible-playbook -i "$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip)," -u ec2-user --private-key=/Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem -e ansible_python_interpreter=/usr/bin/python3.8 ansible/site.yml
+	ansible-playbook -i "$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip)," -u ec2-user --private-key=/Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem -e ansible_python_interpreter=/usr/bin/python3 ansible/site.yml
 
 # Verify deployment
 verify:
 	@echo "Verifying GitLab deployment..."
-	@curl -I http://$(shell terraform -chdir=infra output -raw gitlab_instance_public_dns) | grep "200 OK" || (echo "HTTP verification failed" && exit 1)
-	@git ls-remote ssh://git@$(shell terraform -chdir=infra output -raw gitlab_instance_public_dns):22/root/test.git || (echo "SSH clone verification failed" && exit 1)
+	@curl -I http://$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip) | grep "200 OK" || (echo "HTTP verification failed" && exit 1)
+	@git ls-remote ssh://git@$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip):22/root/test.git || (echo "SSH clone verification failed" && exit 1)
 	@echo "Running dry-run backup on GitLab instance..."
 	ssh -o StrictHostKeyChecking=no -i /Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem ec2-user@$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip) "sudo gitlab-backup create DRY_RUN=true"
 
