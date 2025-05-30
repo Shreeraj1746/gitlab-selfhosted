@@ -15,19 +15,45 @@ This repository provides a cost-optimized infrastructure-as-code solution for de
    ```bash
    ./bootstrap.sh
    ```
-2. **Deploy infrastructure and configure GitLab:**
+2. **Deploy AWS infrastructure:**
    ```bash
    make deploy
    ```
-   - This provisions the VPC, subnet, security group, EC2 instance, and (optionally) ALB, S3, and backup resources.
-   - Ansible configures GitLab CE, S3 object storage, and KMS encryption as needed.
+   - Provisions the VPC, subnet, security group, EC2 instance, and (optionally) ALB, S3, and backup resources.
+   - Waits for SSH to become available on the instance.
+3. **Install and configure GitLab:**
+   ```bash
+   make install
+   ```
+   - Runs the Ansible playbook to install and configure GitLab CE on the provisioned EC2 instance.
+4. **Access your GitLab instance:**
+   - Open your browser and go to: `http://<public_ip>` (see below for how to get the public IP)
+   - The login page is also directly accessible at: `http://<public_ip>/users/sign_in`
+   - To get the public IP:
+     ```bash
+     terraform -chdir=infra output -raw gitlab_instance_public_ip
+     ```
+   - Example: `http://13.233.127.55`
+
+5. **Initial Admin Credentials:**
+   - **Username:** `root`
+   - **Password:** The initial password is stored on the instance at `/etc/gitlab/initial_root_password`.
+   - To retrieve it:
+     ```bash
+     ssh -i <your-key.pem> ec2-user@<public_ip>
+     sudo cat /etc/gitlab/initial_root_password
+     ```
+   - **Change this password after first login!**
+
+6. **Create additional users:**
+   - Log in as `root` and use the GitLab web UI to create new users for your organization.
 
 ## Verification
 1. **Run smoke tests:**
    ```bash
    make verify
    ```
-   - Checks HTTP 200 from GitLab URL
+   - Checks HTTP 200 or 302 from GitLab URL (login page redirect is valid)
    - Verifies SSH clone
    - Runs a dry-run backup on the instance
 

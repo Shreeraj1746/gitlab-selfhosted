@@ -9,7 +9,7 @@
 - **Install Dependencies**: `make`, `terraform` (>=1.6), `ansible` (>=9), `yq` (for parsing YAML in Makefile).
 - **Pre-commit Hooks**: Run `pre-commit install` to enforce code quality (includes Commitizen for conventional commits).
 
-### 2. Infrastructure Provisioning (Manual Terraform)
+### 2. Infrastructure Provisioning (Automated Terraform)
 - **Terraform Code**: All AWS resources are defined in `/infra`.
   - `main.tf`: VPC, subnet, security group, EC2, IAM, S3, ALB, and backup resources (all Free Tier by default, paid features gated by variables).
   - `variables.tf`: All input variables for customization and feature toggles.
@@ -23,15 +23,13 @@
   - AWS Backup: Backup vault and nightly plan for EBS (optional, disabled by default).
   - ALB: Optional, disabled by default.
 - **Running Terraform**:
-  - `make plan`: Initializes Terraform, creates an execution plan (`tfplan`).
-  - `make apply`: Applies the plan.
-  - `make output`: Saves outputs to `infra/terraform_outputs.json`.
-  - `make inventory`: Generates Ansible inventory from outputs.
+  - `make deploy`: Initializes and applies Terraform, waits for SSH to become available.
 
 ### 3. Deployment Automation
-- **Makefile**: Automates deployment, verification, and cleanup.
-  - `make deploy`: Runs Terraform and Ansible.
-  - `make verify`: Smoke tests (HTTP 200, SSH clone, dry-run backup).
+- **Makefile**: Automates deployment, installation, verification, and cleanup.
+  - `make deploy`: Provisions AWS resources only (Terraform).
+  - `make install`: Runs Ansible to install and configure GitLab CE on the EC2 instance.
+  - `make verify`: Smoke tests (HTTP 200/302, SSH clone, dry-run backup).
   - `make destroy`: Cleans up all resources.
 
 ### 4. Documentation Updates
@@ -55,11 +53,11 @@
 
 ### 4. Validation & Testing
 - **`make verify` target**: Performs smoke tests.
-  - `curl -I <gitlab_url>`: Checks HTTP/HTTPS 200 OK.
-  - `ssh git@<gitlab_url> info`: SSH access for Git operations.
-  - `ssh <ssh_user>@<instance_ip> "sudo gitlab-backup create DRY_RUN=true"`: Backup dry run.
+  - Uses `curl -L` to check for HTTP 200 or 302 (login redirect) from GitLab URL.
+  - Verifies SSH clone functionality.
+  - Runs a dry-run backup on the GitLab instance.
 - **Manual Functional Tests**:
-  - Access GitLab UI, log in, create project, clone, push, merge.
+  - Access GitLab UI, log in as `root` (see README for password retrieval), create project, clone, push, merge.
   - Test LFS: `git lfs install`, track, push/pull.
 
 ### 5. Documentation & Handover

@@ -134,7 +134,7 @@
         - gitlab
         - backup
 
-    - name: Reconfigure GitLab (with timeout)
+    - name: Reconfigure GitLab
       command: gitlab-ctl reconfigure
       register: reconfigure_result
       ignore_errors: true

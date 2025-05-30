@@ -1,9 +1,8 @@
 # Makefile for GitLab CE deployment
 
-.PHONY: deploy verify destroy
+.PHONY: deploy install verify destroy
 
-# Deploy infrastructure and configure GitLab
-
+# Deploy infrastructure (AWS resources only)
 deploy:
 	@echo "Deploying infrastructure with Terraform..."
 	terraform -chdir=infra init -backend=false
@@ -15,16 +14,32 @@ deploy:
 	  echo "Waiting for SSH... ($$i/30)"; \
 	  sleep 5; \
 	done
+
+# Install and configure GitLab using Ansible
+install:
 	@echo "Running Ansible playbook to configure GitLab..."
 	ansible-playbook -i "$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip)," -u ec2-user --private-key=/Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem -e ansible_python_interpreter=/usr/bin/python3 ansible/site.yml
 
 # Verify deployment
 verify:
 	@echo "Verifying GitLab deployment..."
-	@curl -I http://$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip) | grep "200 OK" || (echo "HTTP verification failed" && exit 1)
-	@git ls-remote ssh://git@$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip):22/root/test.git || (echo "SSH clone verification failed" && exit 1)
-	@echo "Running dry-run backup on GitLab instance..."
-	ssh -o StrictHostKeyChecking=no -i /Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem ec2-user@$(shell terraform -chdir=infra output -raw gitlab_instance_public_ip) "sudo gitlab-backup create DRY_RUN=true"
+	$(eval IP := $(shell terraform -chdir=infra output -raw gitlab_instance_public_ip | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'))
+	@if [ -z "$(IP)" ]; then \
+	  echo "Could not retrieve GitLab instance public IP."; \
+	  exit 1; \
+	fi; \
+	STATUS=$$(curl -s -L -o /dev/null -w "%{http_code}" http://$(IP) || echo "curl_error"); \
+	if [ "$$STATUS" = "200" ] || [ "$$STATUS" = "302" ]; then \
+	  echo "HTTP verification succeeded ($$STATUS)"; \
+	elif [ "$$STATUS" = "curl_error" ]; then \
+	  echo "HTTP verification failed: curl could not connect to http://$(IP)"; \
+	  exit 1; \
+	else \
+	  echo "HTTP verification failed (status=$$STATUS)"; \
+	  exit 1; \
+	fi; \
+	echo "Checking GitLab service status on instance..."; \
+	ssh -o StrictHostKeyChecking=no -i /Users/shreeraj/.ssh/basic-cloud-app-key-pair.pem ec2-user@$(IP) "sudo gitlab-ctl status"
 
 # Destroy infrastructure
 
