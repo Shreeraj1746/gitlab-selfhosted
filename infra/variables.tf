@@ -88,4 +88,10 @@ variable "enable_s3_packages" {
   default     = false # Keep false to stay in free tier by default
 }
 
+variable "ssh_private_key_path" {
+  description = "Path to the SSH private key file on your local machine. Used for SSH and Ansible."
+  type        = string
+  default     = ""
+}
+
 # TODO: Add more variables as needed, e.g., for VPC configuration if not using default, specific AMI ID, etc.

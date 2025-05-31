@@ -3,7 +3,7 @@ resource "aws_instance" "gitlab" {
   instance_type               = "t4g.medium"            # 2 vCPU, 4GB RAM, meets GitLab CE minimum requirements
   subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = true
-  key_name                    = "basic-cloud-app-key-pair"
+  key_name                    = var.key_name
 
   vpc_security_group_ids = [aws_security_group.gitlab_sg.id]
 

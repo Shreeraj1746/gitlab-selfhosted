@@ -10,6 +10,34 @@ This repository provides a cost-optimized infrastructure-as-code solution for de
 - macOS or Linux with `terraform >= 1.6`, `ansible >= 9`, `aws` CLI, `make`, and `jq` installed
 - Run `./bootstrap.sh` to validate your environment
 
+## SSH Key Pair Setup
+
+Before deploying, you must have an EC2 key pair in AWS and the corresponding private key file on your local machine.
+
+### 1. Create a New EC2 Key Pair
+- Go to the AWS Console → EC2 → Key Pairs.
+- Click "Create key pair".
+- Enter a name (e.g., `gitlab-keypair`).
+- Choose file format: `.pem` (for Linux/macOS).
+- Click "Create key pair" and download the `.pem` file. Save it securely (e.g., `~/Downloads/gitlab-keypair.pem`).
+- Move the file to your `.ssh` directory and set permissions:
+  ```bash
+  mv ~/Downloads/gitlab-keypair.pem ~/.ssh/
+  chmod 600 ~/.ssh/gitlab-keypair.pem
+  ```
+
+### 2. Use Your Key Pair for Deployment
+- You must provide both the EC2 key pair name (as created in AWS) and the local path to your private key file when running `make deploy` and other commands.
+- Example:
+  ```bash
+  export KEY_NAME=gitlab-keypair
+  export SSH_PRIVATE_KEY=~/.ssh/gitlab-keypair.pem
+  make deploy
+  ```
+- These variables are required for all Makefile commands that interact with the instance (deploy, install, verify).
+
+- **The key pair must exist in AWS and the private key must be accessible on your machine before deployment.**
+
 ## Deployment
 1. **Bootstrap the environment:**
    ```bash
@@ -40,7 +68,7 @@ This repository provides a cost-optimized infrastructure-as-code solution for de
    - **Password:** The initial password is stored on the instance at `/etc/gitlab/initial_root_password`.
    - To retrieve it:
      ```bash
-     ssh -i <your-key.pem> ec2-user@<public_ip>
+     ssh -i $SSH_PRIVATE_KEY ec2-user@<public_ip>
      sudo cat /etc/gitlab/initial_root_password
      ```
    - **Change this password after first login!**
@@ -96,6 +124,7 @@ flowchart TD
 
 ## Known Issues
 - Ensure the SSH key pair is located at the expected path or update the path in Terraform outputs.
+- Ensure you provide the correct key pair name and private key path as described above. The Makefile and Terraform scripts no longer use a hardcoded path.
 - S3 and ALB resources may incur costs if enabled.
 
 ## Notes
